@@ -14,7 +14,7 @@
  *                                                        *
  * hprose service class for php 5.3+                      *
  *                                                        *
- * LastModified: Nov 6, 2016                              *
+ * LastModified: Mar 19, 2017                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -238,7 +238,11 @@ abstract class Service extends HandlerManager {
         $stream = new BytesIO();
         $writer = new Writer($stream, true);
         $stream->write(Tags::TagError);
-        $writer->writeString($this->debug ? $error->getTraceAsString() : $error->getMessage());
+        $errmsg = $error->getMessage();
+        if ($this->debug) {
+            $errmsg .= "\r\n" . $error->getTraceAsString();
+        }
+        $writer->writeString($errmsg);
         return $stream;
     }
     public function endError($error, stdClass $context) {
@@ -400,6 +404,7 @@ abstract class Service extends HandlerManager {
             foreach ($context as $key => $value) {
                 $cc->$key = $value;
             }
+            $call = false;
             if (isset($this->calls[$alias])) {
                 $call = $this->calls[$alias];
             }
@@ -607,15 +612,7 @@ abstract class Service extends HandlerManager {
             $this->names[] = $alias;
         }
         if (class_exists("\\Generator")) {
-            if (is_array($func)) {
-                $f = new ReflectionMethod($func[0], $func[1]);
-            }
-            else {
-                $f = new ReflectionFunction($func);
-            }
-            if ($f->isGenerator()) {
-                $func = Future\wrap($func);
-            }
+            $func = Future\wrap($func);
         }
         $call = new stdClass();
         $call->method = $func;
@@ -646,7 +643,7 @@ abstract class Service extends HandlerManager {
     public function addFunctions(array $funcs,
                                  array $aliases = array(),
                                  array $options = array()) {
-        if (!empty($aliases) && empty($options) && (array_keys($funcs) != array_key($aliases))) {
+        if (!empty($aliases) && empty($options) && (array_keys($funcs) != array_keys($aliases))) {
             $options = $aliases;
             $aliases = array();
         }
@@ -669,7 +666,7 @@ abstract class Service extends HandlerManager {
     public function addAsyncFunctions(array $funcs,
                                       array $aliases = array(),
                                       array $options = array()) {
-        if (!empty($aliases) && empty($options) && (array_keys($funcs) != array_key($aliases))) {
+        if (!empty($aliases) && empty($options) && (array_keys($funcs) != array_keys($aliases))) {
             $options = $aliases;
             $aliases = array();
         }
@@ -708,7 +705,7 @@ abstract class Service extends HandlerManager {
             }
             $aliases = array();
         }
-        else if (!empty($aliases) && empty($options) && (array_keys($methods) != array_key($aliases))) {
+        else if (!empty($aliases) && empty($options) && (array_keys($methods) != array_keys($aliases))) {
             $options = $aliases;
             $aliases = array();
         }
@@ -740,7 +737,7 @@ abstract class Service extends HandlerManager {
             }
             $aliases = array();
         }
-        else if (!empty($aliases) && empty($options) && (array_keys($methods) != array_key($aliases))) {
+        else if (!empty($aliases) && empty($options) && (array_keys($methods) != array_keys($aliases))) {
             $options = $aliases;
             $aliases = array();
         }
@@ -1217,5 +1214,12 @@ abstract class Service extends HandlerManager {
         else {
             $this->internalPush($topic, $id, $result);
         }
+    }
+
+    /**
+     * @return array
+     */
+    public function getNames(){
+        return $this->names;
     }
 }

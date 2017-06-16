@@ -61,7 +61,6 @@ class Client {
         if (empty($clientFactory)) {
             throw new Exception("This client doesn't support $scheme scheme.");
         }
-        
         return new $clientFactory($uris);
     }
     private $realClient = null;

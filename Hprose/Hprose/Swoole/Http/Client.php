@@ -14,7 +14,7 @@
  *                                                        *
  * hprose swoole http client library for php 5.3+         *
  *                                                        *
- * LastModified: Nov 16, 2016                             *
+ * LastModified: Nov 25, 2016                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -24,6 +24,7 @@ namespace Hprose\Swoole\Http;
 use stdClass;
 use Exception;
 use Hprose\Future;
+use swoole_http_client;
 
 class Client extends \Hprose\Client {
     public $type;
@@ -37,7 +38,6 @@ class Client extends \Hprose\Client {
     public $maxPoolSize = 10;
     public $header = array();
     private $trans;
-    // private $requests = array();
     public function __construct($uris = null) {
         parent::__construct($uris);
         $this->trans = new Transporter($this);

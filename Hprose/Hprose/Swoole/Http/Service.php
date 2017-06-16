@@ -137,9 +137,6 @@ class Service extends \Hprose\Http\Service {
         return false;
     }
     public function handle($request = null, $response = null) {
-        
-    //        print_r($request);
-        
         if ($this->clientAccessPolicyXmlContent !== null &&
             $this->clientAccessPolicyXmlHandler($request, $response)) {
             return $response;

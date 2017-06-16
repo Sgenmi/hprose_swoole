@@ -14,14 +14,14 @@
  *                                                        *
  * hprose socket Transporter class for php 5.3+           *
  *                                                        *
- * LastModified: Sep 17, 2016                             *
+ * LastModified: Nov 25, 2016                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
 
 namespace Hprose\Swoole\Socket;
 
-
+use swoole_client;
 
 abstract class Transporter {
     public $client;
@@ -82,17 +82,16 @@ abstract class Transporter {
     }
     public function create() {
         $client = $this->client;
-        $conn = new \Swoole\Client($client->type, SWOOLE_SOCK_ASYNC);
+        $conn = new swoole_client($client->type, SWOOLE_SOCK_ASYNC);
         // The type is changed after new swoole_client in old version swoole.
         // The new version swoole is fixed this bug.
         $client->type &= 0xFF;
         if ($client->type !== SWOOLE_UNIX_STREAM) {
             $client->settings['open_tcp_nodelay'] = $client->noDelay;
         }
-        $this->settings['open_eof_check'] = false;
-        $this->settings['open_length_check'] = false;
-        $this->settings['open_eof_split'] = false;
-        
+        $client->settings['open_eof_check'] = false;
+        $client->settings['open_length_check'] = false;
+        $client->settings['open_eof_split'] = false;
         $conn->set($client->settings);
         $this->setReceiveEvent($conn);
         $this->size++;

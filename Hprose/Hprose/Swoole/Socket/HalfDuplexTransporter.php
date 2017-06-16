@@ -92,14 +92,12 @@ class HalfDuplexTransporter extends Transporter {
             }
             $self->size--;
         };
-        
         $header = pack('N', strlen($request));
         $conn->send($header);
         $conn->send($request);
     }
     public function sendAndReceive($request, $future, stdClass $context) {
         $conn = $this->fetch();
-
         if ($conn !== null) {
             $this->send($request, $future, $context, $conn);
         }
@@ -126,7 +124,6 @@ class HalfDuplexTransporter extends Transporter {
             $conn->on('connect', function($conn) use ($self, $request, $future, $context) {
                 $self->send($request, $future, $context, $conn);
             });
-            
             $conn->connect($this->client->host, $this->client->port);
         }
         else {

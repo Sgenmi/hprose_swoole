@@ -29,8 +29,6 @@ require_once 'functions.php';
 spl_autoload_register(function($className) {
     if ((strlen($className) > 6) && (strtolower(substr($className, 0, 6)) === "hprose")) {
         if ($className{6} === '\\') {
-//            echo $className."\n";
-//            echo  __DIR__ . DIRECTORY_SEPARATOR . str_replace("\\", DIRECTORY_SEPARATOR, $className) . ".php\n";
             include __DIR__ . DIRECTORY_SEPARATOR . str_replace("\\", DIRECTORY_SEPARATOR, $className) . ".php";
         }
         else {

@@ -14,7 +14,7 @@
  *                                                        *
  * hprose future class for php 5.3+                       *
  *                                                        *
- * LastModified: Aug 12, 2016                             *
+ * LastModified: Dec 7, 2016                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -27,13 +27,14 @@ use TypeError;
 use Hprose\Future\UncatchableException;
 
 class Future {
+
     const PENDING = 0;
     const FULFILLED = 1;
     const REJECTED = 2;
 
-    public $state = Future::PENDING;
-    public $value;
-    public $reason;
+    private $state = Future::PENDING;
+    private $value;
+    private $reason;
     private $subscribers = array();
 
     public function __construct($computation = NULL) {
@@ -87,7 +88,7 @@ class Future {
         }
     }
 
-    public function resolve($value) {
+    public function resolve($value = NULL) {
         if ($value === $this) {
             $this->reject(new TypeError('Self resolution'));
             return;
@@ -230,7 +231,8 @@ class Future {
         );
     }
 
-    public function complete($oncomplete) {
+    public function complete($oncomplete = false) {
+        $oncomplete = $oncomplete ?: function($v) { return $v; };
         return $this->then($oncomplete, $oncomplete);
     }
 
@@ -313,5 +315,4 @@ class Future {
     public function includes($searchElement, $strict = false) {
         return Future\includes($this, $searchElement, $strict);
     }
-
 }

@@ -7,6 +7,8 @@
  * @Email 150560159@qq.com
  */
 
+define("HPROSE_VERSION", "2.0.30");
+define("HPROSE_SWOOLE", "2.0.11");
 define("BASE", __DIR__);
 define("RPC_PATH", BASE . "/../Hprose");
 define("APP_PATH", BASE . "/../App");
