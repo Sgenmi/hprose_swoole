@@ -71,7 +71,7 @@ class Server extends Service {
         parent::__construct();
         $url = $this->parseUrl($uri);
         $this->type = $url->type;
-        $this->server = new \Swoole\Server($url->host, $url->port, $mode, $url->type);
+        $this->server = new swoole_server($url->host, $url->port, $mode, $url->type);
     }
     public function setNoDelay($value) {
         $this->noDelay = $value;
