@@ -24,7 +24,7 @@ HttpServer::$action_list = array(
     'addMethods' => array(), //指定类里面public方法来发布
     'addInstanceMethods' => array(//$object 对象上所在类上声明的所有 public 实例方法
         array(
-            'func' => new App\Action\User(),
+            'func' => new App\Controller\User(),
             'class' => '',
             'alias' => 'RPC_User',
             'option' => array()
@@ -32,7 +32,7 @@ HttpServer::$action_list = array(
     ),
     'addClassMethods' => array(//静态方法发布
         array(
-            'func' => new App\Action\St(),
+            'func' => new App\Controller\St(),
             'class' => '',
             'alias' => 'RPC_St',
             'option' => array()
