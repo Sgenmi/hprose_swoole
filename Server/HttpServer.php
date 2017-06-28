@@ -34,7 +34,7 @@ function missFunction() {
 class HttpServer {
 
     private $rpc_type = "http";
-    private $rpc_server = "192.168.1.134";
+    private $rpc_server = "127.0.0.1";
     private $rpc_name = "/user";
     private $rpc_port = "8086";
     private $zookeeper_sers = "192.168.1.134:2181,192.168.1.244:2182,192.168.1.244:2183";
@@ -54,7 +54,7 @@ class HttpServer {
 //    'open_cpu_affinity' => 1,
 //    'task_worker_num' => 1,
         //'open_cpu_affinity' => 1,
-        'task_worker_num' => 0,
+        'task_worker_num' => 1,
         //'enable_port_reuse' => true,
         'worker_num' => 1,
         //'log_file' => __DIR__.'/swoole.log',
@@ -75,7 +75,7 @@ class HttpServer {
     const CONNECT_COUNT_RESET = 3;
 
     public function __construct() {
-
+        
         $this->publist_zookeeper();
 
         $serv_add = $this->rpc_type . "://" . $this->rpc_server . ":" . $this->rpc_port;
@@ -96,8 +96,8 @@ class HttpServer {
         });
 
         $http->on("WorkerStart", function($serv, $worker_id) use ( $http) {
-            require APP_PATH."/AppLoad.php";
-            
+            require APP_PATH . "/AppLoad.php";
+
             echo "启动成功\n";
             //动态，平滑发布新服务
             $action_list = HttpServer::$action_list;
@@ -137,23 +137,35 @@ class HttpServer {
             'status' => 1,
             'time' => time()
         );
-           !$this->zookeeper->exists($this->rpc_name) &&  $this->zookeeper->create($this->rpc_name, null, $params);
+        !$this->zookeeper->exists($this->rpc_name) && $this->zookeeper->create($this->rpc_name, null, $params);
         $zooNode = $this->rpc_name . "/" . $this->rpc_server . ":" . $this->rpc_port;
-        $this->zookeeper->create($zooNode, json_encode($json), $params, \Zookeeper::EPHEMERAL);
         
+        if( $this->zookeeper->exists($zooNode)  ){
+            $this->zookeeper->delete($zooNode);
+        }
+        $this->zookeeper->create($zooNode, json_encode($json), $params, \Zookeeper::EPHEMERAL);
     }
 
     private function get_zookeeper() {
-
-        $this->zookeeper = new Zookeeper($this->zookeeper_sers, NULL, 100);
-        if ($this->zookeeper_conn_num < self:: CONNECT_COUNT_RESET && !$this->zookeeper->exists("/zookeeper")) {
+        
+        try {
+            $this->zookeeper = new \Zookeeper();
+        $this->zookeeper->connect($this->zookeeper_sers, NULL, 100);
+            $this->zookeeper->exists("/");
+        } catch (\ZookeeperConnectionException $ex) {
             $this->zookeeper_conn_num++;
+            if ($this->zookeeper_conn_num >= self:: CONNECT_COUNT_RESET) {
+                exit("连接zookeeper出错\n");
+            }
+            $this->get_zookeeper();
+        } catch (\ZookeeperException $ec) {
+            $this->zookeeper_conn_num++;
+            if ($this->zookeeper_conn_num >= self:: CONNECT_COUNT_RESET) {
+                exit("连接zookeeper出错\n");
+            }
             $this->get_zookeeper();
         }
 
-        if ($this->zookeeper_conn_num >= self:: CONNECT_COUNT_RESET) {
-            exit("连接zookeeper出错\n");
-        }
     }
 
     public static function getInstance() {
@@ -162,6 +174,7 @@ class HttpServer {
         }
         return self::$instance;
     }
+
 }
 
 HttpServer::getInstance();
