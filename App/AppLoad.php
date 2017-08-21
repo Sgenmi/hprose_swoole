@@ -13,3 +13,4 @@ spl_autoload_register(function ($clsName){
     }
 });
 require APP_PATH.'/Config/ActionList.php';
+require APP_PATH.'/Core/Functions.php';
