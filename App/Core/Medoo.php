@@ -48,14 +48,17 @@ class Medoo {
         
        if (self::$pdo == null) {
             $_config = \HttpServer::$db_config;
-            $port = 3306;
             if (isset($_config['port']) && is_int($_config['port'] * 1)) {
                 $port = $_config['port'];
             }
             $type = strtolower($_config['database_type']);
             $dsn = $type . ':host=' . $_config['server'] . ';port=' . $port . ';dbname=' . $_config['database_name'];
             try {
-                self::$pdo = new \PDO($dsn, $_config['username'], $_config['password'], array(\PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8",\PDO::ATTR_CASE => \PDO::CASE_NATURAL));
+                self::$pdo = new \PDO($dsn, $_config['username'], $_config['password'], array(
+                    \PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8",
+                    \PDO::ATTR_CASE => \PDO::CASE_NATURAL,
+                    \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION
+                        ));
             } catch (\PDOException $e) {
                 throw new Exception($e->getMessage());
             }
