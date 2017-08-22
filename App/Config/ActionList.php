@@ -1,5 +1,18 @@
 <?php
 
+
+ HttpServer::$db_config = [
+        'server' => "127.0.0.1",
+        'port' => 3306,
+        'username' => 'root',
+        'password' => '123456',
+        'database_name' => 'magento',
+        'database_type' => 'mysql',
+        'prefix' => 'catalog_',
+        'debug_mode' => false
+    ];
+
+
 HttpServer::$action_list = array(
     'addMissingFunction' => array(//当客户端调用未发布的方法时调用
         array(
