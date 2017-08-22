@@ -38,6 +38,7 @@ class Client extends \Hprose\Client {
     public $maxPoolSize = 10;
     public $header = array();
     private $trans;
+    public $timeout=30000;
     public function __construct($uris = null) {
         parent::__construct($uris);
         $this->trans = new Transporter($this);
@@ -85,6 +86,7 @@ class Client extends \Hprose\Client {
     }
     public function setPoolTimeout($value) {
         $this->poolTimeout = $value;
+        $this->timeout = $value;
     }
     public function getPoolTimeout() {
         return $this->poolTimeout;
