@@ -38,16 +38,7 @@ class HttpServer {
     private $rpc_name = "/user";
     private $rpc_port = "8086";
     private $zookeeper_sers = "192.168.1.134:2181,192.168.1.244:2182,192.168.1.244:2183";
-    public static $db_config = [
-        'server' => "127.0.0.1",
-        'port' => 3306,
-        'username' => 'root',
-        'password' => '123456',
-        'database_name' => 'magento',
-        'database_type' => 'mysql',
-        'prefix' => 'catalog_',
-        'debug_mode' => false
-    ];
+    public static $db_config = [];
     public $server_config = [
         'daemonize' => 0,
         'max_request' => 5000000,
@@ -62,7 +53,7 @@ class HttpServer {
         'backlog' => 128,
         'dispatch_mode' => 1,
     ];
-    public static $action_list = array();
+    public static $action_list = [];
     public static $instance;
     public static $http;
     public static $get;
