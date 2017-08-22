@@ -30,7 +30,7 @@ HttpServer::$action_list = array(
     'addFunctions' => array(//多个方法发布
         array(
             'func' => array( 'hello','reload'),
-            'alias' => array(),
+            'alias' => array('fn_hello','fn_reload'),
             'option' => array()
         )
     ),
@@ -39,7 +39,7 @@ HttpServer::$action_list = array(
         array(
             'func' => new App\Controller\User(),
             'class' => '',
-            'alias' => 'RPC_User',
+            'alias' => 'Cls_User',
             'option' => array()
         )
     ),
@@ -47,7 +47,7 @@ HttpServer::$action_list = array(
         array(
             'func' => new App\Controller\St(),
             'class' => '',
-            'alias' => 'RPC_St',
+            'alias' => 'Cls_St',
             'option' => array()
         )
     )
