@@ -13,6 +13,7 @@ define("BASE", __DIR__);
 define("RPC_PATH", BASE . "/../Hprose");
 define("APP_PATH", BASE . "/../App");
 require RPC_PATH . '/Hprose.php';
+require BASE."/Qstatic.php";
 
 use Hprose\Swoole\Server;
 
@@ -75,12 +76,12 @@ class HttpServer {
         $http->on('start', function($serv) {
             echo "开始服务\n";
             //增加zookeeper服务分支
-            $this->publist_zookeeper('create');
+//            $this->publist_zookeeper('create');
         });
         $http->on('Shutdown', function() {
             echo "服务停止\n";
             //删除zookeeper服务分支
-            $this->publist_zookeeper('delete');
+//            $this->publist_zookeeper('delete');
         });
 
         $http->on("task", function($serv, $taskId, $fromId, $data) {
@@ -88,7 +89,7 @@ class HttpServer {
             $medoo = App\Core\Medoo::getInstance();
 //            $data = $medoo->get('product_index_website', "*", array('website_id' => 1));
 //          echo $medoo->last_query();
-            print_r($data);
+//            print_r($data);
             return $data;
         });
         $http->on("finish", function($serv, $taskId, $data) {
@@ -114,9 +115,10 @@ class HttpServer {
         });
 
 //        $http->setErrorTypes(E_ALL);
-//        $http->setDebugEnabled();
+        $http->setDebugEnabled();
 //        $http->setCrossDomainEnabled();
 //        $http->addFunction('hello');
+        $http->addInvokeHandler(array(new Qstatic(), 'synchandle'));
         HttpServer::$http = $http;
         $http->start();
     }
