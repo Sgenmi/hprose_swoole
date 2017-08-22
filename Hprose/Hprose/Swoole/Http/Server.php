@@ -23,6 +23,7 @@ namespace Hprose\Swoole\Http;
 
 use stdClass;
 use Exception;
+use swoole_http_server;
 
 class Server extends Service {
     public $server;
@@ -54,14 +55,7 @@ class Server extends Service {
     public function __construct($uri, $mode = SWOOLE_BASE) {
         parent::__construct();
         $url = $this->parseUrl($uri);
-        
-        $this->server = new \Swoole\Http\Server($url->host, $url->port, $mode, $url->type);
-        
-//        echo "aaaaaaaaaaa\n";
-//        if(!$this->server)
-//        {
-//        $this->server = new \Swoole\Http\Server($url->host, $url->port, $mode, $url->type);
-//        }
+        $this->server = new swoole_http_server($url->host, $url->port, $mode, $url->type);
     }
     public function set($settings) {
         $this->settings = array_replace($this->settings, $settings);
@@ -69,7 +63,6 @@ class Server extends Service {
     public function on($name, $callback) {
         $this->server->on($name, $callback);
     }
-
     public function addListener($uri) {
         $url = $this->parseUrl($uri);
         $this->server->addListener($url->host, $url->port);

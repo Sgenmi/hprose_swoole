@@ -14,7 +14,7 @@
  *                                                        *
  * hprose http client class for php 5.3+                  *
  *                                                        *
- * LastModified: Aug 6, 2016                              *
+ * LastModified: Dec 5, 2016                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -40,6 +40,7 @@ class Client extends \Hprose\Client {
     private $curlVersionLittleThan720;
     private $results = array();
     private $curls = array();
+    private $contexts = array();
     public static function keepSession() {
         if (isset($_SESSION['HPROSE_COOKIE_MANAGER'])) {
             self::$cookieManager = $_SESSION['HPROSE_COOKIE_MANAGER'];
@@ -60,9 +61,6 @@ class Client extends \Hprose\Client {
             CURLOPT_POST => true,
             CURLOPT_NOSIGNAL => 1
         );
-        if (!$async) {
-            $this->curl = curl_init();
-        }
         $curl_version = curl_version();
         $this->curlVersionLittleThan720 = (1 == version_compare('7.20.0', $curl_version['version']));
     }
@@ -73,9 +71,6 @@ class Client extends \Hprose\Client {
             }
             catch (Exception $e) {
             }
-        }
-        else {
-            curl_close($this->curl);
         }
     }
     public function setHeader($name, $value) {
@@ -185,7 +180,8 @@ class Client extends \Hprose\Client {
         $this->keepAlive = true;
         $this->keepAliveTimeout = 300;
     }
-    private function initCurl($curl, $request, $timeout) {
+    private function initCurl($curl, $request, $context) {
+        $timeout = $context->timeout;
         foreach ($this->options as $name => $value) {
             curl_setopt($curl, $name, $value);
         }
@@ -208,6 +204,13 @@ class Client extends \Hprose\Client {
         foreach ($this->header as $name => $value) {
             $headers_array[] = $name . ": " . $value;
         }
+        if (isset($context->httpHeader)) {
+            $header = $context->httpHeader;
+            foreach ($header as $name => $value) {
+                $headers_array[] = $name . ": " .
+                    (is_array($value) ? join(", ", $value) : $value);
+            }
+        }
         curl_setopt($curl, CURLOPT_HTTPHEADER, $headers_array);
         if ($this->proxy) {
             curl_setopt($curl, CURLOPT_PROXY, $this->proxy);
@@ -224,7 +227,7 @@ class Client extends \Hprose\Client {
         But PHP 5.3 can't call private method in closure,
         so we comment the private keyword.
     */
-    /*private*/ function getContents($response) {
+    /*private*/ function getContents($response, $context) {
         do {
             list($response_headers, $response) = explode("\r\n\r\n", $response, 2);
             $http_response_header = explode("\r\n", $response_headers);
@@ -240,6 +243,24 @@ class Client extends \Hprose\Client {
                 $response_status = "Unknown Error.";
             }
         } while (substr($response_code, 0, 1) == "1");
+        $header = array();
+        foreach ($http_response_header as $headerline) {
+            $pair = explode(':', $headerline, 2);
+            $name = trim($pair[0]);
+            $value = (count($pair) > 1) ? trim($pair[1]) : '';
+            if (array_key_exists($name, $header)) {
+                if (is_array($header[$name])) {
+                    $header[$name][] = $value;
+                }
+                else {
+                    $header[$name] = array($header[$name], $value);
+                }
+            }
+            else {
+                $header[$name] = $value;
+            }
+        }
+        $context->httpHeader = $header;
         if ($response_code != '200') {
             throw new Exception($response_code . ": " . $response_status . "\r\n\r\n" . $response);
         }
@@ -247,21 +268,24 @@ class Client extends \Hprose\Client {
         return $response;
     }
     private function syncSendAndReceive($request, stdClass $context) {
-        $curl = $this->curl;
-        $this->initCurl($curl, $request, $context->timeout);
+        $curl = curl_init();
+        $this->initCurl($curl, $request, $context);
         $data = curl_exec($curl);
         $errno = curl_errno($curl);
         if ($errno) {
             throw new Exception($errno . ": " . curl_error($curl));
         }
-        return $this->getContents($data);
+        $data = $this->getContents($data, $context);
+        curl_close($curl);
+        return $data;
     }
     private function asyncSendAndReceive($request, stdClass $context) {
         $result = new Future();
         $curl = curl_init();
-        $this->initCurl($curl, $request, $context->timeout);
+        $this->initCurl($curl, $request, $context);
         $this->curls[] = $curl;
         $this->results[] = $result;
+        $this->contexts[] = $context;
         return $result;
     }
     protected function sendAndReceive($request, stdClass $context) {
@@ -287,6 +311,8 @@ class Client extends \Hprose\Client {
             $this->curls = array();
             $results = $this->results;
             $this->results = array();
+            $contexts = $this->contexts;
+            $this->contexts = array();
             foreach ($curls as $curl) {
                 curl_multi_add_handle($multicurl, $curl);
             }
@@ -300,14 +326,20 @@ class Client extends \Hprose\Client {
                     while ($info = curl_multi_info_read($multicurl, $msgs_in_queue)) {
                         $handle = $info['handle'];
                         $index = array_search($handle, $curls, true);
-                        $results[$index]->resolve(Future\sync(function() use ($self, $info, $handle) {
+                        $context = $contexts[$index];
+                        $results[$index]->resolve(Future\sync(function() use ($self, $info, $handle, $context) {
                             if ($info['result'] === CURLM_OK) {
-                                return $self->getContents(curl_multi_getcontent($handle));
+                                return $self->getContents(curl_multi_getcontent($handle), $context);
                             }
                             throw new Exception($info['result'] . ": " . curl_error($handle));
                         }));
                         --$count;
                         if ($msgs_in_queue === 0) break;
+                    }
+
+                    // See https://bugs.php.net/bug.php?id=61141
+                    if (curl_multi_select($multicurl) === -1) {
+                        usleep(100);
                     }
                 }
             }

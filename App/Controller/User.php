@@ -8,11 +8,11 @@
  * @Email 150560159@qq.com
  */
 
-namespace App\Action;
+namespace App\Controller;
 
 use App\Core\BaseAction;
 
-class User extends BaseAction {
+class User extends BaseAction   {
 
     public function get($he) {
         return $he . "sjmmmmmmmmmmmmmm";

@@ -41,25 +41,34 @@ class Medoo {
     }
 
     public function __construct() {
-
-        if (self::$pdo == null) {
+        $this->connect();
+    }
+    
+    public function connect(){
+        
+       if (self::$pdo == null) {
             $_config = \HttpServer::$db_config;
-            $port = 3306;
             if (isset($_config['port']) && is_int($_config['port'] * 1)) {
                 $port = $_config['port'];
             }
             $type = strtolower($_config['database_type']);
             $dsn = $type . ':host=' . $_config['server'] . ';port=' . $port . ';dbname=' . $_config['database_name'];
             try {
-                self::$pdo = new \PDO($dsn, $_config['username'], $_config['password'], array(\PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8",\PDO::ATTR_CASE => \PDO::CASE_NATURAL));
+                self::$pdo = new \PDO($dsn, $_config['username'], $_config['password'], array(
+                    \PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8",
+                    \PDO::ATTR_CASE => \PDO::CASE_NATURAL,
+                    \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION
+                        ));
             } catch (\PDOException $e) {
                 throw new Exception($e->getMessage());
             }
             $this->prefix = $_config['prefix'];
             $this->debug_mode = $_config['debug_mode'];
         }
-        
     }
+
+    
+
 
     public function query($query) {
         if ($this->debug_mode) {
@@ -67,7 +76,19 @@ class Medoo {
             return false;
         }
         $this->logs[] = $query;
-        return self::$pdo->query($query);
+        
+      try {
+            $queryData = self::$pdo->query($query);
+        } catch (Exception $e) {
+            //重新连接
+            if ($e->getCode() == 'HY000') {
+                echo "数据库重新连接_" . date("Y-m-d H:i:s") . "\n";
+                self::$pdo=null;
+                $this->connect();
+                $queryData = self::$pdo->query($query);
+            }
+        }
+        return $queryData;
     }
 
     public function exec($query) {
@@ -77,11 +98,33 @@ class Medoo {
             return false;
         }
         $this->logs[] = $query;
-        return self::$pdo->exec($query);
+      try {
+            $execData = self::$pdo->exec($query);
+        } catch (Exception $e) {
+            //重新连接
+            if ($e->getCode() == 'HY000') {
+                echo "数据库重新连接_" . date("Y-m-d H:i:s") . "\n";
+                self::$pdo=null;
+                $this->connect();
+                $execData = self::$pdo->exec($query);
+            }
+        }
+        return $execData;
     }
 
     public function quote($string) {
-        return self::$pdo->quote($string);
+            try {
+            $quoteData = self::$pdo->quote($string);
+        } catch (Exception $e) {
+            //重新连接
+            if ($e->getCode() == 'HY000') {
+                echo "数据库重新连接_" . date("Y-m-d H:i:s") . "\n";
+                self::$pdo=null;
+                $this->connect();
+                $quoteData = self::$pdo->quote($string);
+            }
+        }
+        return $quoteData;
     }
 
     protected function table_quote($table) {
