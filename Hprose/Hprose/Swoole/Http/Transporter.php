@@ -49,6 +49,7 @@ class Transporter {
             $ip = $client->host;
         }
         $conn = new swoole_http_client($ip, $client->port, $client->ssl);
+        $conn->set(array('timeout'=>$client->timeout));
         $this->size++;
         return $conn;
     }
@@ -132,7 +133,7 @@ class Transporter {
                     $future->resolve($conn->body);
                 }
                 else {
-                    $future->reject(new Exception($conn->body));
+                    $future->reject(new Exception("超时"));
                 }
             }
             else {
